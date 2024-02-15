@@ -1,22 +1,11 @@
 package com.example.userservice.services;
 
+import com.example.userservice.models.Token;
 import com.example.userservice.models.User;
-import jakarta.transaction.Transactional;
-
-import java.util.List;
-import java.util.Optional;
+import org.springframework.http.ResponseEntity;
 
 public interface UserService {
-    public User getUser(Long id);
-    public List<User> getAllUser();
-    public User createUser(User user);
-
-    public User updateUser(Long id,User user);
-
-    public User modifyUser(Long id,User user);
-
-
-    public void deleteUser(Long id);
-
-    public String  userLogin(String userName,String password);
+    public User SignupUser(String name,String email,String password);
+    public Token LoginUser(String email,String password);
+    void logout(String token);
 }

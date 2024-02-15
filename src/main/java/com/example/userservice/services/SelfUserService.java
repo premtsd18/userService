@@ -1,81 +1,62 @@
 package com.example.userservice.services;
 
+import com.example.userservice.models.Token;
 import com.example.userservice.models.User;
-import com.example.userservice.models.UserBuilder;
+import com.example.userservice.repository.TokenRepository;
 import com.example.userservice.repository.UserRepository;
-import com.example.userservice.repository.projections.UserProjection;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
+import java.util.Optional;
 
 @Service
-public class SelfUserService implements UserService {
-
-    UserRepository userRepository;
-
-    SelfUserService(UserRepository userRepository){
+public class SelfUserService implements UserService{
+    private UserRepository userRepository;
+    private TokenRepository tokenRepository;
+    BCryptPasswordEncoder bCryptPasswordEncoder;
+    SelfUserService(UserRepository userRepository,TokenRepository tokenRepository,BCryptPasswordEncoder bCryptPasswordEncoder){
         this.userRepository=userRepository;
+        this.tokenRepository=tokenRepository;
+        this.bCryptPasswordEncoder=bCryptPasswordEncoder;
     }
 
     @Override
-    public User getUser(Long id) {
-         User user=userRepository.getUserById(id);
-         User userReturn= new UserBuilder().createUser();
-         userReturn.setId(user.getId());
-         userReturn.setUserName(user.getUserName()+"abc");
-         userReturn.setEmail(user.getEmail()+"gmail.com");
-         userReturn.setPhoneNo(user.getPhoneNo()+"999");
-         userReturn.setAddress(userReturn.getAddress());
-        System.out.println(userReturn.getAddress());
-
-         return user;
-    }
-
-    @Override
-    public List<User> getAllUser() {
-        List<UserProjection> users= userRepository.getAllBy();
-        System.out.println(users.get(0).getAddress());
-        List<User> userReturn=new ArrayList<>();
-        userReturn.add(new UserBuilder().createUser());
-        userReturn.get(0).setAddress(users.get(0).getAddress());
-        return userReturn;
-//        return null;
-    }
-
-    @Override
-    public User createUser(User user) {
+    public User SignupUser(String name, String email, String password) {
+        User user=new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setHashedPassword(bCryptPasswordEncoder.encode(password));
         return userRepository.save(user);
     }
 
     @Override
-    public User updateUser(Long id, User user) {
-        return userRepository.save(user);
+    public Token LoginUser(String email, String password) {
+        Optional<User> userOptional=userRepository.getUserByEmail(email);
+        if(userOptional.isEmpty()) return new Token();
+        User user=userOptional.get();
+        if(!bCryptPasswordEncoder.matches(password,user.getHashedPassword())) return new Token();
+        Token token= new Token();
+        token.setUser(user);
+        token.setExpiryAt(new Date());
+        token.setValue(RandomStringUtils.randomAlphanumeric(15));
+        return tokenRepository.save(token);
     }
+
 
     @Override
-    public User modifyUser(Long id, User user) {
-       User userToUpdate=userRepository.getUserById(id);
-       if(user.getUserName()!=null) userToUpdate.setUserName(user.getUserName());
-        if(user.getPassword()!=null) userToUpdate.setPassword(user.getPassword());
-        if(user.getAddress()!=null) userToUpdate.setAddress(user.getAddress());
-        if(user.getFirstName()!=null) userToUpdate.setFirstName(user.getFirstName());
-        if(user.getLastName()!=null) userToUpdate.setLastName(user.getLastName());
-        if(user.getEmail()!=null) userToUpdate.setEmail(user.getEmail());
-        if(user.getPhoneNo()!=null) userToUpdate.setPhoneNo(user.getPhoneNo());
-
-        return userRepository.save(userToUpdate);
+    public void logout(String token) {
+        Optional<Token> tokenOptional=tokenRepository.getTokenByValueAndDeleted(token,false);
+        if(tokenOptional.isEmpty()){
+            return;
+        }
+        Token tokenToUpdate=tokenOptional.get();
+        tokenToUpdate.setDeleted(true);
+        tokenRepository.save(tokenToUpdate);
     }
 
-    @Override
-    public void deleteUser(Long id) {
-        System.out.println("CHECKDELETE");
-         userRepository.deleteUserById(id);
-         return;
-    }
 
-    @Override
-    public String userLogin(String userName, String password) {
-        return userName+12345678;
-    }
 }

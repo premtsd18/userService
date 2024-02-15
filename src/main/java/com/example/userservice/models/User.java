@@ -1,42 +1,20 @@
 package com.example.userservice.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToMany;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
-import java.util.Set;
-
+import java.util.List;
 
 @Getter
 @Setter
 @Entity
-public class User {
-    @Id
-    @GeneratedValue
-    private long id;
-    String email;
-    String userName;
-    String firstName;
-    String lastName;
-    String password;
-    String phoneNo;
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    Address address;
-
-    User(long id, String email, String userName, String firstName, String lastName, String password, String phoneNo, Address address) {
-        this.id = id;
-        this.email = email;
-        this.userName = userName;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.password = password;
-        this.phoneNo = phoneNo;
-        this.address = address;
-    }
-
-    public User() {
-
-    }
+public class User extends BaseModel{
+    private String name;
+    private String email;
+    private String hashedPassword;
+    @ManyToMany
+    private List<Role> roles;
+    private boolean isEmailVerified;
 }
